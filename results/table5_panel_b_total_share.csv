@@ -1,0 +1,3 @@
+assets,months,grs_f,p_value,benchmark_model,tested_factors,paper_grs_f,paper_p_value
+2.0,204.0,2.064584622271597,0.12958001149950266,CH-3,"FFSMB, FFHML",0.88,0.41
+2.0,204.0,24.037537416639786,4.460689697177504e-10,FF-3,"SMB, VMG",33.9,2.14e-13

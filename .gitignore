@@ -1,0 +1,60 @@
+# Raw, interim, and processed data
+data/raw/
+data/interim/
+data/processed/
+*.csv
+*.parquet
+*.feather
+*.pkl
+*.pickle
+*.h5
+*.hdf5
+*.xlsx
+*.xls
+
+# Aggregate replication outputs are safe to keep.
+!results/*.csv
+
+# Compressed datasets
+*.zip
+*.7z
+*.rar
+*.gz
+*.gzip
+*.tar
+
+# Papers and other potentially restricted documents
+*.pdf
+!docs/size-and-value-in-china-2019.pdf
+!docs/online-appendix.pdf
+
+# Local configuration and secrets
+.env
+.env.*
+config.local.*
+secrets.*
+credentials.*
+
+# Python environments and caches
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+
+# Jupyter temporary files
+.ipynb_checkpoints/
+
+# Temporary work files
+work/
+tmp/
+temp/
+logs/
+*.log
+
+# macOS and local VS Code settings
+.DS_Store
+.vscode/
