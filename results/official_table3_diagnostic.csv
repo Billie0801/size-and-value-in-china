@@ -1,0 +1,4 @@
+factor,months,mean_percent,std_percent,t_statistic,paper_mean_percent,paper_std_percent,paper_t,factor_source
+MKT,204,0.7014705882352941,8.122367511037181,1.2335078396300048,0.66,8.09,1.16,updated official CH-3
+SMB,204,1.011862745098039,4.512788228671033,3.202519155548571,1.03,4.52,3.25,updated official CH-3
+VMG,204,1.109705882352941,3.7941359877268828,4.17743863751411,1.14,3.75,4.34,updated official CH-3

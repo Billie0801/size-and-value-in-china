@@ -1,54 +1,23 @@
-# Size and Value in China
+# Size and Value in China 复现
 
-This repository reproduces the China three-factor model in Liu, Stambaugh,
-and Yuan (2019) and compares it with the Fama-French three-factor model.
+本仓库复现 Liu、Stambaugh 和 Yuan（2019）提出的中国三因子模型，并将其与 Fama-French 三因子模型进行对比。
 
-The main analysis is in `notebooks/replicate_main.ipynb`. The supporting code
-is deliberately limited to three files:
+主要分析位于 `notebooks/replicate_main.ipynb`。代码只保留三个文件：
 
-- `data.py` reads the large Wind files and builds a point-in-time monthly panel.
-- `factors.py` applies the common 2 x 3 portfolio construction to EP or BM.
-- `inference.py` contains the statistics used in Tables 3 and 5.
+- `data.py`：读取 Wind 的财务/收益数据与 CSMAR 的市值数据，构建时点（point-in-time）月度面板。
+- `factors.py`：构建 2×3 因子、异象（anomaly）十分组，以及交错的日度反转组合。
+- `inference.py`：包含因子统计量、White-HC0 回归、GRS 检验，以及滚动 R² 的计算。
 
-The published paper and its online appendix are in `docs/` for reference.
+已发表论文及其在线附录放在 `docs/` 目录下供参考。
 
-## Current scope
+## 当前范围
 
-The sample runs from January 2000 through December 2016. Both models remove
-the smallest 30% of eligible stocks and use the same monthly 2 x 3 portfolio
-sort. CH-3 constructs MKT, SMB, and the EP-based VMG factor; FF-3 replaces EP
-with BM and constructs FFSMB and FFHML. Size, portfolio weights, and valuation
-denominators use market value based on `TOT_SHR_TODAY`. The raw earnings-price
-ratio is kept as `EP_raw`; the CH-3 sorting variable is `EP = max(EP_raw, 0)`.
-A stock must have at least 15 trading records in the most recent 22
-market trading days, in addition to 120 trading records over the preceding 12
-months.
+样本区间为 2000 年 1 月至 2016 年 12 月。两个模型都剔除可投资股票中市值最小的 30%，并使用相同的月度 2×3 组合排序。CH-3 构建 MKT、SMB 和基于 EP 的 VMG 因子；FF-3 用 BM 替换 EP，并构建 FFSMB 与 FFHML。规模、微市值股筛选以及所有组合权重都使用 CSMAR 的 A 股总市值（`Msmvttl`），其中包含非流通 A 股、剔除 B 股和 H 股。Wind 的收益与财务数据予以保留。EP/BM/CP 估值端的分母仍使用 Wind 收盘价乘以 `TOT_SHR_TODAY`，并未采用仅含 A 股的口径。这是一次已明确披露的混合数据源复现，而非对作者原始 Wind 数据的精确重建。原始盈利价格比保留为 `EP_raw`；CH-3 的排序变量为 `EP = max(EP_raw, 0)`。盈利数据由报表披露的年初至今累计利润换算为单期利润：2002 年起按季度拆分，2002 年之前按半年拆分。在当前报告发布时，上一期的对应组成部分必须已经公开。这一频率选择已通过与 Wind 单独的单季利润字段对比得到支持，但并不宣称这是作者代码中明文记录的约定。除过去 12 个月内有 120 个交易日记录外，股票还必须在最近 22 个市场交易日中至少有 15 个交易日记录。
 
-The FF-3 portfolios use the same sortable stock universe as CH-3 and require
-positive book equity. Raw BM is retained in the monthly panel; observations
-without EP or with nonpositive BM are excluded only from the FF-3 six-portfolio
-sort.
+两个模型共用同一基础股票池、微市值股切分点、市场因子和规模分组断点。FF-3 要求 EP 与 BM 可用。账面市值比为负的股票予以保留，并归入低 BM 组，而不是做截断处理。这是针对论文"同一股票池"条件的一项已披露处理选择，并不宣称作者明确要求保留净资产为负的股票。原始 BM 在月度面板中保留。次月收益是否可得，不用于筛选股票或计算分组断点。组合收益在收益可得的观测上重新归一化权重。
 
-Following the paper's online appendix, BM uses point-in-time
-`TOT_SHRHLDR_EQY_EXCL_MIN_INT`. Duplicate income and balance-sheet statements
-prefer type `408005000`, falling back to `408001000`. The notebook reports the
-Table 3 factor summary and the Table 5 White-HC0 regressions and GRS tests.
-Following Appendix A.1, financial information before 2002 is restricted to
-semiannual and annual reports; quarterly reports are used from 2002 onward.
+依据论文在线附录，BM 使用时点口径的 `TOT_SHRHLDR_EQY_EXCL_MIN_INT`（归属母公司股东权益，不含少数股东权益）。对于重复的利润表和资产负债表，在构建日已公开的记录中优先选择类型 `408005000`，若无则回退到 `408001000`。后续更优的报表类型不会把此前已公开的报表从历史面板中抹除。Notebook 报告表 3 的因子摘要，以及表 5 的 White-HC0 回归与 GRS 检验。依据附录 A.1，2002 年之前的盈利与净资产信息仅限半年报和年报；2002 年起使用季报。
 
-## Running the notebook
+表 4 对应中国的各分面板；表 6–8 对应异象组合。表 4 使用带截距、要求 36 个有效观测的 36 个月滚动回归；仅使用 2000–2016 区间内的完整日历窗口。面板 C 需要美股个股数据，未予复现。表 6–8 使用相同的十个异象策略、无条件与市值中性两种十分组，以及 White HC0 推断。市值中性腿是先合并股票再做市值加权，而不是对十个规模组的收益做等权平均。日度反转使用滞后的 20 日信号，以及五个交错的 5 日持有期。其余变量按月排序。每个滚动窗口都要求 36 个观测齐全。这是对已发表窗口的一项已披露解读，而非作者确认的缺失数据处理规则；该最小值在参数单元格中可见。
 
-Create an untracked `config.local.json` in the project root:
-
-```json
-{
-  "data_root": "/absolute/path/to/the/raw/data"
-}
-```
-
-Run the notebook from top to bottom. Intermediate parquet files are stored
-under `work/ch3_total_share_cache` so the multi-gigabyte raw files do not need to
-be scanned on every run. Aggregate outputs are written to `results`.
-
-Raw Wind data, local paths, caches, and record-level processed data must not be
-committed.
+现金流优先采用附录口径的"期末现金余额减期初余额"，在余额缺失时回退到报表披露的现金净变动额。这两个源字段并非普遍等同。由于 2002 年一、三季度的现金流覆盖稀疏，CP 在 2002 年及以前使用半年报和年报，并把半年变动额除以 2，2003 年起改用季度变动额。这一独立的 CP 边界是对数据覆盖情况的一项已披露选择，并非作者确认的规则；盈利、净资产和 ROE 均不受影响。CP 有 204 个无条件月份和 203 个市值中性月份。少的那一个月是 2000 年 5 月，当时部分规模组缺少足够数量的正 CP 股票。其他异象策略均有 204 个月。缺失的组合收益不用零填充。

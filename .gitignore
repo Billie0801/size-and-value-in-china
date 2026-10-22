@@ -58,3 +58,6 @@ logs/
 # macOS and local VS Code settings
 .DS_Store
 .vscode/
+
+# Anaconda project metadata
+anaconda_projects/

@@ -1,4 +1,4 @@
-"""Statistics reported in Tables 3 and 5."""
+"""Statistics reported in Tables 3-8."""
 
 import numpy as np
 import pandas as pd
@@ -9,14 +9,10 @@ from scipy.stats import f as f_distribution
 def summarize_factors(factors, columns):
     rows = []
     for column in columns:
-        series = pd.to_numeric(factors[column], errors="coerce").dropna()
+        series = factors[column].dropna()
         count = len(series)
         standard_deviation = series.std(ddof=1)
-        t_statistic = (
-            series.mean() / (standard_deviation / np.sqrt(count))
-            if count > 1 and standard_deviation > 0
-            else float("nan")
-        )
+        t_statistic = series.mean() / (standard_deviation / np.sqrt(count))
         rows.append(
             {
                 "factor": column,
@@ -31,7 +27,7 @@ def summarize_factors(factors, columns):
 
 def factor_regression(data, dependent, explanatory_factors):
     columns = [dependent, *explanatory_factors]
-    sample = data[columns].apply(pd.to_numeric, errors="coerce").dropna()
+    sample = data[columns].dropna()
     fit = sm.OLS(sample[dependent], sm.add_constant(sample[list(explanatory_factors)])).fit(
         cov_type="HC0"
     )
@@ -56,9 +52,6 @@ def grs_test(test_assets, benchmark_factors):
     factors = sample[factor_names].to_numpy(dtype=float)
     observations, number_of_assets = assets.shape
     number_of_factors = factors.shape[1]
-    if observations <= number_of_assets + number_of_factors:
-        raise ValueError("Not enough observations for the GRS test")
-
     design = np.column_stack([np.ones(observations), factors])
     coefficients = np.linalg.lstsq(design, assets, rcond=None)[0]
     alphas = coefficients[0]
@@ -69,7 +62,6 @@ def grs_test(test_assets, benchmark_factors):
     factor_mean = factors.mean(axis=0)
     centered_factors = factors - factor_mean
     factor_covariance = centered_factors.T @ centered_factors / observations
-    factor_covariance = np.atleast_2d(factor_covariance)
 
     numerator = alphas @ np.linalg.solve(residual_covariance, alphas)
     denominator = 1.0 + factor_mean @ np.linalg.solve(
@@ -95,3 +87,35 @@ def grs_test(test_assets, benchmark_factors):
             ),
         }
     )
+
+
+def rolling_factor_r_squared(stock_returns, factors, explanatory_factors, window, minimum_observations):
+    returns = stock_returns.reindex(factors.index)
+    design = np.column_stack([np.ones(len(factors)), factors[list(explanatory_factors)].to_numpy()])
+    values = returns.to_numpy(dtype=float)
+    total_r_squared = np.zeros(values.shape[1])
+    windows = np.zeros(values.shape[1], dtype=int)
+    for end in range(window, len(returns) + 1):
+        x = design[end - window:end]
+        y = values[end - window:end]
+        valid = np.isfinite(y)
+        count = valid.sum(axis=0)
+        usable = count >= minimum_observations
+        mask = valid[:, usable]
+        observed = np.where(mask, y[:, usable], 0)
+        cross_products = (x[:, :, None] * x[:, None, :]).reshape(window, -1)
+        xx = (mask.T @ cross_products).reshape(-1, design.shape[1], design.shape[1])
+        xy = observed.T @ x
+        coefficients = np.linalg.solve(xx, xy[:, :, None])[:, :, 0]
+        yy = np.square(observed).sum(axis=0)
+        total_variation = yy - observed.sum(axis=0) ** 2 / count[usable]
+        residual_variation = yy - (coefficients * xy).sum(axis=1)
+        r_squared = (total_variation - residual_variation) / total_variation
+        positions = np.flatnonzero(usable)
+        total_r_squared[positions] += r_squared
+        windows[positions] += 1
+    return pd.DataFrame({
+        "stock_id": returns.columns,
+        "mean_r_squared": pd.Series(total_r_squared) / windows,
+        "rolling_windows": windows,
+    })

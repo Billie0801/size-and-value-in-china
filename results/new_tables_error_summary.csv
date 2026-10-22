@@ -1,0 +1,5 @@
+table,metrics,relative_errors_defined,within_10_percent,median_relative_error_percent,metrics_with_shorter_sample
+Table 4,8,8,8,3.3750554661321965,0
+Table 6,114,114,79,5.813627179726591,6
+Table 7,152,150,67,12.11167749622304,8
+Table 8,152,151,82,9.055175622482006,8
